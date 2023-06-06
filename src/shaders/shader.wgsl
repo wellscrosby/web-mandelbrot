@@ -28,7 +28,9 @@ struct Camera {
     position: vec2<f32>,
     vertical_scale: f32,
     scale_factor: f32,
-    vertical_resolution: vec4<f32>,
+    vertical_resolution: f32,
+    is_multisampling: i32,
+    padding: vec2<i32>,
 };
 
 @group(0) @binding(0) var<uniform> camera: Camera;
@@ -71,27 +73,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     //var brightness = get_brightness(in.position);
     var brightness = 0.0;
 
-    if true {
-
-        //let num_samples = 8;
-
-        let y_offset: f32 = (1.0 / (camera.vertical_resolution[0] / 2.0)) / 3.0;
+    if camera.is_multisampling == 1 {
+        let y_offset: f32 = (1.0 / (camera.vertical_resolution / 2.0)) / 3.0;
         let x_offset: f32 = y_offset / camera.scale_factor;
 
-        //for (var i: i32 = 0; i < num_samples; i++) {
-        //    if i == 0 {brightness += get_brightness((in.position + vec2<f32>(samples[0].x * x_offset, samples[0].y * y_offset)));}
-        //    if i == 1 {brightness += get_brightness((in.position + vec2<f32>(samples[1].x * x_offset, samples[1].y * y_offset)));}
-        //    if i == 2 {brightness += get_brightness((in.position + vec2<f32>(samples[2].x * x_offset, samples[2].y * y_offset)));}
-        //    if i == 3 {brightness += get_brightness((in.position + vec2<f32>(samples[3].x * x_offset, samples[3].y * y_offset)));}
-        //   if i == 4 {brightness += get_brightness((in.position + vec2<f32>(samples[4].x * x_offset, samples[4].y * y_offset)));}
-        //    if i == 5 {brightness += get_brightness((in.position + vec2<f32>(samples[5].x * x_offset, samples[5].y * y_offset)));}
-        //    if i == 6 {brightness += get_brightness((in.position + vec2<f32>(samples[6].x * x_offset, samples[6].y * y_offset)));}
-        //    if i == 7 {brightness += get_brightness((in.position + vec2<f32>(samples[7].x * x_offset, samples[7].y * y_offset)));}
-        //}
-
-        //brightness = brightness / f32(num_samples);
-
-
+        brightness += get_brightness(in.position);
 
         brightness += get_brightness((in.position + vec2<f32>(x_offset, y_offset)));
         brightness += get_brightness((in.position + vec2<f32>(x_offset, -y_offset)));
@@ -104,7 +90,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         brightness += get_brightness((in.position + vec2<f32>(-x_offset, 0.0)));
 
         brightness = (brightness / (9.0));
+    } else {
+        brightness += get_brightness(in.position);
     }
 
-    return vec4<f32>(brightness / 2.0, sin(brightness * 3.14159), sin(brightness * 3.14159), 1.0);
+    return vec4<f32>(brightness / 8.0, (sin(brightness * 3.14159) * 0.75) + (brightness / 4.0), (sin(brightness * 3.14159) / 2.0) + (brightness / 2.0), 1.0);
 }

@@ -1,11 +1,11 @@
-use rand::Rng;
-use rand_distr::{Distribution, Normal, NormalError};
+//use rand::Rng;
+//use rand_distr::{Distribution, Normal, NormalError};
 use web_mandelbrot::run;
 
 fn main() {
     pollster::block_on(run());
 
-    let mut rng = rand::thread_rng();
+    /* let mut rng = rand::thread_rng();
     //let normal = Normal::new(2.0, 3.0).unwrap();
 
     let mut samples = vec![];
@@ -18,5 +18,5 @@ fn main() {
         wgpuified.push_str(&format!("vec2<f32>({}, {}), ", sample.0, sample.1));
     }
     println!("{:?}", wgpuified);
-    println!("{:?}", &samples.len());
+    println!("{:?}", &samples.len()); */
 }

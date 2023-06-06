@@ -1,18 +1,16 @@
-use cgmath::prelude::*;
+//use cgmath::prelude::*;
 use wgpu::util::DeviceExt;
 use winit::{
-    dpi::PhysicalPosition,
+    //dpi::PhysicalPosition,
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::{Fullscreen, Window, WindowBuilder},
+    window::{Window, WindowBuilder},
 };
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 mod camera;
-
-const NUM_SAMPLES: u32 = 8;
 
 struct State {
     surface: wgpu::Surface,
@@ -24,6 +22,7 @@ struct State {
     clear_color: wgpu::Color,
     render_pipeline: wgpu::RenderPipeline,
     camera: camera::Camera,
+    camera_controller: camera::CameraController,
     camera_buffer: wgpu::Buffer,
     camera_bind_group: wgpu::BindGroup,
     mouse_pressed: bool,
@@ -87,6 +86,8 @@ impl State {
         surface.configure(&device, &config);
 
         let camera = camera::Camera::new(&window);
+
+        let camera_controller = camera::CameraController::new();
 
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
@@ -176,6 +177,7 @@ impl State {
             clear_color,
             render_pipeline,
             camera,
+            camera_controller,
             camera_bind_group,
             camera_buffer,
             mouse_pressed: false,
@@ -195,7 +197,7 @@ impl State {
         }
         self.camera.scale_factor = new_size.width as f32 / new_size.height as f32;
 
-        self.camera.vertical_resolution = [new_size.height as f32, 0.0, 0.0, 0.0];
+        self.camera.vertical_resolution = new_size.height as f32;
 
         println!("scale: {:?}", self.camera.scale_factor);
         println!("size: {:?}", self.window.inner_size());
@@ -203,44 +205,19 @@ impl State {
         #[cfg(target_arch = "wasm32")]{
             web_sys::console::log_2(&"%s : Hello World".into(),&"John".into());
         }
-        /* #[cfg(target_arch = "wasm32")]
-        {
-            // Winit prevents sizing with CSS, so we have to set
-            // the size manually when on web.
-            use winit::dpi::PhysicalSize;
-            let html_window = web_sys::window().unwrap();
-            //html_canvas.style().height
-            self.window.set_inner_size(PhysicalSize::new(
-                html_window.inner_width().unwrap().as_f64().unwrap() * html_window.device_pixel_ratio(),
-                html_window.inner_height().unwrap().as_f64().unwrap()
-                    * html_window.device_pixel_ratio(),
-            ));
-            use winit::platform::web::WindowExtWebSys;
-            web_sys::window()
-                .and_then(|win| win.document())
-                .and_then(|doc| {
-                    let dst = doc.get_element_by_id("wasm-example")?;
-                    let canvas = web_sys::Element::from(self.window.canvas());
-                    dst.append_child(&canvas).ok()?;
-                    Some(())
-                })
-                .expect("Couldn't append canvas to document body.");
-        }
-        self.update();
-        self.render(); */
     }
 
-    fn input(&mut self, event: &WindowEvent, dt: instant::Duration) -> bool {
+    fn input(&mut self, event: &WindowEvent, _dt: instant::Duration) -> bool {
         match event {
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
                         virtual_keycode: Some(key),
-                        state,
+                        state: element_state,
                         ..
                     },
                 ..
-            } => self.camera.process_keyboard(*key, *state, dt),
+            } => self.camera_controller.process_keyboard(*key, *element_state),
             /* WindowEvent::MouseWheel { delta, .. } => {
                 self.camera_controller.process_scroll(delta);
                 true
@@ -361,12 +338,16 @@ pub async fn run() {
     let mut state = State::new(window).await;
     let mut last_render_time = instant::Instant::now();
 
-    event_loop.run(move |event, _, control_flow| 
+    event_loop.run(move |event, _, control_flow|{
+        let now = instant::Instant::now();
+        let dt = now - last_render_time;
+        last_render_time =  now;
+
         match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.window().id() && !state.input(event, instant::Instant::now() - last_render_time) => {
+            } if window_id == state.window().id() && !state.input(event, dt) => {
                 match event {
                     #[cfg(not(target_arch="wasm32"))]
                     WindowEvent::CloseRequested
@@ -409,12 +390,13 @@ pub async fn run() {
                 state.window().request_redraw();
             }
             Event::DeviceEvent {
-                event: DeviceEvent::MouseMotion{ delta, },
+                event: DeviceEvent::MouseMotion{ delta: _, },
                 .. // We're not using device_id currently
             } => if state.mouse_pressed {
                 //state.camera_controller.process_mouse(delta.0, delta.1)
             }
             _ => {}
         }
-    );
+        state.camera_controller.apply_controller(&mut state.camera, dt);
+    });
 }
