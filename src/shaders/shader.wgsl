@@ -30,7 +30,8 @@ struct Camera {
     scale_factor: f32,
     vertical_resolution: f32,
     is_multisampling: i32,
-    padding: vec2<i32>,
+    coloring_scheme: i32,
+    padding: i32,
 };
 
 @group(0) @binding(0) var<uniform> camera: Camera;
@@ -94,5 +95,21 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         brightness += get_brightness(in.position);
     }
 
-    return vec4<f32>(brightness / 8.0, (sin(brightness * 3.14159) * 0.75) + (brightness / 4.0), (sin(brightness * 3.14159) / 2.0) + (brightness / 2.0), 1.0);
+    switch camera.coloring_scheme {
+        case 0 {
+            return vec4<f32>(brightness, brightness, brightness, 1.0);
+        }
+        case 1 {
+            return vec4<f32>(sin(brightness * 3.14159), sin(brightness * 3.14159), sin(brightness * 3.14159), 1.0);
+        }
+        case 2 {
+            return vec4<f32>(brightness / 8.0, (sin(brightness * 3.14159) * 0.75) + (brightness / 4.0), (sin(brightness * 3.14159) / 2.0) + (brightness / 2.0), 1.0);
+        }
+        case 3 {
+            return vec4<f32>((1.0 - brightness) / 2.0, (1.0 - brightness) / 6.0, (1.0 - brightness) / 1.5, 1.0);
+        }
+        default: {
+            return vec4<f32>(1.0 - brightness, 1.0 - brightness, 1.0 - brightness, 1.0);
+        }
+    }
 }

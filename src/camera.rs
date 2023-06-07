@@ -7,25 +7,13 @@ use winit::window::Window;
 const LATERAL_SENSITIVITY: f32 = 1.0;
 const ZOOM_SENSITIVITY: f32 = 1.0;
 
-// We need this for Rust to store our data correctly for the shaders
-#[repr(C)]
-// This is so we can store this in a buffer
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Camera {
-    pub position: [f32; 2],
-    pub vertical_scale: f32,
-    pub scale_factor: f32,
-    pub vertical_resolution: f32,
-    pub is_multisampling: i32,
-    pub padding: [i32; 2],
-}
-
 #[derive(Debug)]
 pub struct CameraController {
     x_speed: f32,
     y_speed: f32,
     zoom_speed: f32,
-    pub is_multisampling: i32,
+    is_multisampling: i32,
+    coloring_scheme: i32,
 }
 
 impl CameraController {
@@ -35,6 +23,7 @@ impl CameraController {
             y_speed: 0.0,
             zoom_speed: 0.0,
             is_multisampling: 0,
+            coloring_scheme: 0,
         }
     }
 
@@ -45,6 +34,7 @@ impl CameraController {
         camera.position[1] += self.y_speed * camera.vertical_scale * dt * LATERAL_SENSITIVITY;
         camera.vertical_scale += camera.vertical_scale * self.zoom_speed * dt * ZOOM_SENSITIVITY;
         camera.is_multisampling = self.is_multisampling;
+        camera.coloring_scheme = self.coloring_scheme;
     }
 
     pub fn process_keyboard(&mut self, key: VirtualKeyCode, element_state: ElementState) -> bool {
@@ -85,17 +75,17 @@ impl CameraController {
                 }
                 true
             }
-            VirtualKeyCode::C => {
+            VirtualKeyCode::LShift => {
                 if is_pressed {
-                    self.zoom_speed = 1.0;
+                    self.zoom_speed = -1.0;
                 } else {
                     self.zoom_speed = 0.0;
                 }
                 true
             }
-            VirtualKeyCode::V => {
+            VirtualKeyCode::Space => {
                 if is_pressed {
-                    self.zoom_speed = -1.0;
+                    self.zoom_speed = 1.0;
                 } else {
                     self.zoom_speed = 0.0;
                 }
@@ -111,9 +101,29 @@ impl CameraController {
                 }
                 true
             }
+            VirtualKeyCode::C => {
+                if is_pressed {
+                    self.coloring_scheme = (self.coloring_scheme + 1) % 4;
+                }
+                true
+            }
             _ => false,
         }
     }
+}
+
+// We need this for Rust to store our data correctly for the shaders
+#[repr(C)]
+// This is so we can store this in a buffer
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Camera {
+    pub position: [f32; 2],
+    pub vertical_scale: f32,
+    pub scale_factor: f32,
+    pub vertical_resolution: f32,
+    pub is_multisampling: i32,
+    pub coloring_scheme: i32,
+    pub padding: i32,
 }
 
 impl Camera {
@@ -124,7 +134,8 @@ impl Camera {
             scale_factor: window.inner_size().width as f32 / window.inner_size().height as f32,
             vertical_resolution: window.inner_size().height as f32,
             is_multisampling: 0,
-            padding: [0, 0],
+            coloring_scheme: 0,
+            padding: 0,
         }
     }
 
