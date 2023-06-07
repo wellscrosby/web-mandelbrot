@@ -41,7 +41,7 @@ impl CameraController {
         println!("{:?}", self);
         let is_pressed = element_state == ElementState::Pressed;
         match key {
-            VirtualKeyCode::W | VirtualKeyCode::Up => {
+            VirtualKeyCode::W => {
                 //self.position[1] += self.vertical_scale * LATERAL_SENSITIVITY * dt;
                 if is_pressed {
                     self.y_speed = 1.0;
