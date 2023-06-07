@@ -242,23 +242,6 @@ impl State {
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
 
-        /* let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("multisampling texture"),
-            size: wgpu::Extent3d {
-                width: self.size.width,
-                height: self.size.height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: NUM_SAMPLES,
-            dimension: wgpu::TextureDimension::D2,
-            format: self.config.format,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &self.config.view_formats,
-        }); */
-
-        //let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());

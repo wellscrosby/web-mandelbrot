@@ -51,7 +51,7 @@ impl CameraController {
 
                 true
             }
-            VirtualKeyCode::S | VirtualKeyCode::Down => {
+            VirtualKeyCode::S => {
                 if is_pressed {
                     self.y_speed = -1.0;
                 } else {
@@ -59,7 +59,7 @@ impl CameraController {
                 }
                 true
             }
-            VirtualKeyCode::A | VirtualKeyCode::Left => {
+            VirtualKeyCode::A => {
                 if is_pressed {
                     self.x_speed = -1.0;
                 } else {
@@ -67,7 +67,7 @@ impl CameraController {
                 }
                 true
             }
-            VirtualKeyCode::D | VirtualKeyCode::Right => {
+            VirtualKeyCode::D => {
                 if is_pressed {
                     self.x_speed = 1.0;
                 } else {
@@ -75,7 +75,7 @@ impl CameraController {
                 }
                 true
             }
-            VirtualKeyCode::LShift => {
+            VirtualKeyCode::Up => {
                 if is_pressed {
                     self.zoom_speed = -1.0;
                 } else {
@@ -83,7 +83,7 @@ impl CameraController {
                 }
                 true
             }
-            VirtualKeyCode::Space => {
+            VirtualKeyCode::Down => {
                 if is_pressed {
                     self.zoom_speed = 1.0;
                 } else {
