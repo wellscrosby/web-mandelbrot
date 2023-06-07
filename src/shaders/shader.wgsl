@@ -97,13 +97,13 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     switch camera.coloring_scheme {
         case 0 {
-            return vec4<f32>(brightness, brightness, brightness, 1.0);
+            return vec4<f32>(brightness / 8.0, (sin(brightness * 3.14159) * 0.75) + (brightness / 4.0), (sin(brightness * 3.14159) / 2.0) + (brightness / 2.0), 1.0);
         }
         case 1 {
             return vec4<f32>(sin(brightness * 3.14159), sin(brightness * 3.14159), sin(brightness * 3.14159), 1.0);
         }
         case 2 {
-            return vec4<f32>(brightness / 8.0, (sin(brightness * 3.14159) * 0.75) + (brightness / 4.0), (sin(brightness * 3.14159) / 2.0) + (brightness / 2.0), 1.0);
+            return vec4<f32>(brightness, brightness, brightness, 1.0);
         }
         case 3 {
             return vec4<f32>((1.0 - brightness) / 2.0, (1.0 - brightness) / 6.0, (1.0 - brightness) / 1.5, 1.0);
