@@ -31,12 +31,12 @@ struct Camera {
     vertical_resolution: f32,
     is_multisampling: i32,
     coloring_scheme: i32,
-    padding: i32,
+    max_iterations: i32,
 };
 
 @group(0) @binding(0) var<uniform> camera: Camera;
 
-fn get_brightness(position: vec2<f32>) -> f32 {
+fn get_brightness(position: vec2<f32>) -> i32 {
     let x0 = (position.x * camera.vertical_scale * camera.scale_factor) + camera.position.x;
     let y0 = (position.y * camera.vertical_scale) + camera.position.y;
 
@@ -47,10 +47,9 @@ fn get_brightness(position: vec2<f32>) -> f32 {
     var y2 = 0.0;
 
     var iteration = 0;
-    let max_iteration = 2000;
 
     loop {
-        if x2 + y2 <= 4.0 && iteration < max_iteration {
+        if x2 + y2 <= 4.0 && iteration < camera.max_iterations {
             y = (x + x) * y + y0;
             x = x2 - y2 + x0;
             x2 = x * x;
@@ -61,34 +60,35 @@ fn get_brightness(position: vec2<f32>) -> f32 {
         }
     }
 
-    return f32(iteration) / f32(max_iteration);
+    return iteration;
 }
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     //var brightness = get_brightness(in.position);
-    var brightness = 0.0;
+    var iterations = 0;
 
     if camera.is_multisampling == 1 {
         let y_offset: f32 = (1.0 / (camera.vertical_resolution / 2.0)) / 3.0;
         let x_offset: f32 = y_offset / camera.scale_factor;
 
-        brightness += get_brightness(in.position);
+        iterations += get_brightness(in.position);
 
-        brightness += get_brightness((in.position + vec2<f32>(x_offset, y_offset)));
-        brightness += get_brightness((in.position + vec2<f32>(x_offset, -y_offset)));
-        brightness += get_brightness((in.position + vec2<f32>(-x_offset, y_offset)));
-        brightness += get_brightness((in.position + vec2<f32>(-x_offset, -y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(x_offset, y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(x_offset, -y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(-x_offset, y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(-x_offset, -y_offset)));
 
-        brightness += get_brightness((in.position + vec2<f32>(0.0, y_offset)));
-        brightness += get_brightness((in.position + vec2<f32>(0.0, -y_offset)));
-        brightness += get_brightness((in.position + vec2<f32>(x_offset, 0.0)));
-        brightness += get_brightness((in.position + vec2<f32>(-x_offset, 0.0)));
+        iterations += get_brightness((in.position + vec2<f32>(0.0, y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(0.0, -y_offset)));
+        iterations += get_brightness((in.position + vec2<f32>(x_offset, 0.0)));
+        iterations += get_brightness((in.position + vec2<f32>(-x_offset, 0.0)));
 
-        brightness = (brightness / (9.0));
+        iterations = i32(f32(iterations) / (9.0));
     } else {
-        brightness += get_brightness(in.position);
+        iterations += get_brightness(in.position);
     }
+    let brightness = f32(iterations) / f32(camera.max_iterations);
 
     switch camera.coloring_scheme {
         case 0 {
@@ -102,6 +102,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         }
         case 3 {
             return vec4<f32>((1.0 - brightness) / 2.0, (1.0 - brightness) / 6.0, (1.0 - brightness) / 1.5, 1.0);
+        }
+        case 4 {
+            return vec4<f32>(
+                min(f32(iterations), f32(camera.max_iterations) * (0.1)) / (f32(camera.max_iterations) * (0.1)),
+                min(f32(iterations), f32(camera.max_iterations) * (0.3)) / (f32(camera.max_iterations) * (0.3)),
+                min(f32(iterations), f32(camera.max_iterations) * (1.0)) / (f32(camera.max_iterations) * (1.0)),
+                1.0
+            );
         }
         default: {
             return vec4<f32>(1.0 - brightness, 1.0 - brightness, 1.0 - brightness, 1.0);

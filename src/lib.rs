@@ -207,7 +207,8 @@ impl State {
         }
     }
 
-    fn input(&mut self, event: &WindowEvent, _dt: instant::Duration) -> bool {
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        println!("input frame");
         match event {
             WindowEvent::KeyboardInput {
                 input:
@@ -240,6 +241,7 @@ impl State {
     }
 
     fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+        let timer = instant::Instant::now(); 
         let output = self.surface.get_current_texture()?;
 
         let view = output
@@ -268,12 +270,15 @@ impl State {
 
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_pipeline(&self.render_pipeline);
-
+            
+            
             render_pass.draw(0..3, 0..1);
+            
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
+        println!("drawtime: {}", (instant::Instant::now() - timer).as_secs_f32());
 
         Ok(())
     }
@@ -320,17 +325,19 @@ pub async fn run() {
 
     let mut state = State::new(window).await;
     let mut last_render_time = instant::Instant::now();
+    let mut dt = 0.0;
 
     event_loop.run(move |event, _, control_flow|{
-        let now = instant::Instant::now();
-        let dt = now - last_render_time;
-        last_render_time =  now;
+        
+        
+
+        
 
         match event {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.window().id() && !state.input(event, dt) => {
+            } if window_id == state.window().id() && !state.input(event) => {
                 match event {
                     #[cfg(not(target_arch="wasm32"))]
                     WindowEvent::CloseRequested
@@ -370,7 +377,13 @@ pub async fn run() {
             Event::MainEventsCleared => {
                 // RedrawRequested will only trigger once, unless we manually
                 // request it.
+                let now = instant::Instant::now();
+                dt = (now - last_render_time).as_secs_f32();
+                println!("render time: {}", dt);
+                
+                last_render_time =  now;
                 state.window().request_redraw();
+                
             }
             Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion{ delta: _, },

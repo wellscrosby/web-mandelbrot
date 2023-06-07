@@ -4,8 +4,8 @@ use instant::Duration;
 use winit::event::*;
 use winit::window::Window;
 
-const LATERAL_SENSITIVITY: f32 = 1.0;
-const ZOOM_SENSITIVITY: f32 = 1.0;
+const LATERAL_SENSITIVITY: f32 = 0.5;
+const ZOOM_SENSITIVITY: f32 = 0.5;
 
 #[derive(Debug)]
 pub struct CameraController {
@@ -14,6 +14,8 @@ pub struct CameraController {
     zoom_speed: f32,
     is_multisampling: i32,
     coloring_scheme: i32,
+    is_reset: bool,
+    max_iterations: f32,
 }
 
 impl CameraController {
@@ -24,17 +26,25 @@ impl CameraController {
             zoom_speed: 0.0,
             is_multisampling: 0,
             coloring_scheme: 0,
+            is_reset: false,
+            max_iterations: 1000.0,
         }
     }
 
-    pub fn apply_controller(&self, camera: &mut Camera, dt: Duration) {
-        let dt = dt.as_secs_f32();
-
+    pub fn apply_controller(&mut self, camera: &mut Camera, dt: f32) {
         camera.position[0] += self.x_speed * camera.vertical_scale * dt * LATERAL_SENSITIVITY;
         camera.position[1] += self.y_speed * camera.vertical_scale * dt * LATERAL_SENSITIVITY;
         camera.vertical_scale += camera.vertical_scale * self.zoom_speed * dt * ZOOM_SENSITIVITY;
         camera.is_multisampling = self.is_multisampling;
         camera.coloring_scheme = self.coloring_scheme;
+        if self.is_reset {
+            camera.position = [0.0, 0.0];
+            camera.vertical_scale = 1.0;
+            self.is_reset = false
+        }
+        camera.max_iterations = self.max_iterations as i32;
+
+        println!("max iterations: {}", camera.max_iterations);
     }
 
     pub fn process_keyboard(&mut self, key: VirtualKeyCode, element_state: ElementState) -> bool {
@@ -103,7 +113,25 @@ impl CameraController {
             }
             VirtualKeyCode::C => {
                 if is_pressed {
-                    self.coloring_scheme = (self.coloring_scheme + 1) % 4;
+                    self.coloring_scheme = (self.coloring_scheme + 1) % 5;
+                }
+                true
+            }
+            VirtualKeyCode::R => {
+                if is_pressed {
+                    self.is_reset = true;
+                }
+                true
+            }
+            VirtualKeyCode::Left => {
+                if is_pressed {
+                    self.max_iterations *= 0.95;
+                }
+                true
+            }
+            VirtualKeyCode::Right => {
+                if is_pressed {
+                    self.max_iterations *= 1.05;
                 }
                 true
             }
@@ -123,7 +151,7 @@ pub struct Camera {
     pub vertical_resolution: f32,
     pub is_multisampling: i32,
     pub coloring_scheme: i32,
-    pub padding: i32,
+    pub max_iterations: i32,
 }
 
 impl Camera {
@@ -135,7 +163,7 @@ impl Camera {
             vertical_resolution: window.inner_size().height as f32,
             is_multisampling: 0,
             coloring_scheme: 0,
-            padding: 0,
+            max_iterations: 1000,
         }
     }
 
