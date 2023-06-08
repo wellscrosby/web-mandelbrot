@@ -316,7 +316,7 @@ pub async fn run() {
         web_sys::window()
             .and_then(|win| win.document())
             .and_then(|doc| {
-                let dst = doc.get_element_by_id("wasm-example")?;
+                let dst = doc.get_element_by_id("web-mandelbrot")?;
                 let canvas = web_sys::Element::from(window.canvas());
                 dst.append_child(&canvas).ok()?;
                 Some(())
@@ -368,10 +368,8 @@ pub async fn run() {
                     }
                     _ => {}
                 }
-                last_render_time = instant::Instant::now();
             }
             Event::RedrawRequested(window_id) if window_id == state.window().id() => {
-                last_render_time = instant::Instant::now();
                 state.update();
                 match state.render() {
                     Ok(_) => {}
