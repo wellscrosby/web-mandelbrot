@@ -3,7 +3,7 @@ use wgpu::util::DeviceExt;
 use winit::{
     //dpi::PhysicalPosition,
     event::*,
-    event_loop::{ControlFlow, EventLoop},
+    event_loop::{ControlFlow, EventLoop}, 
     window::{Window, WindowBuilder},
 };
 
@@ -298,6 +298,7 @@ pub async fn run() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
     
+    
 
     #[cfg(target_arch = "wasm32")]
     {
@@ -329,7 +330,15 @@ pub async fn run() {
 
     event_loop.run(move |event, _, control_flow|{
         
-        
+        #[cfg(target_arch = "wasm32")]
+        {
+            use winit::dpi::PhysicalSize;
+            let html_window = web_sys::window().unwrap();
+            state.window.set_inner_size(PhysicalSize::new(
+                (html_window.inner_width().unwrap().as_f64().unwrap() * html_window.device_pixel_ratio()) as u32,
+                (html_window.inner_height().unwrap().as_f64().unwrap() * html_window.device_pixel_ratio()) as u32,
+            ));
+        }
 
         
 
